@@ -1,0 +1,47 @@
+# Use the official Rust image as base
+FROM rust:1.70 as builder
+
+# Install Docker CLI
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y docker-ce-cli
+
+WORKDIR /usr/src/metaverse
+COPY . .
+
+# Build with release optimizations
+RUN cargo build --release
+
+# Create minimal runtime image
+FROM debian:bullseye-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    ca-certificates \
+    docker-ce-cli \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the built binary
+COPY --from=builder /usr/src/metaverse/target/release/metaverse /usr/local/bin/
+
+# Create data directories
+RUN mkdir -p /data/metaverse /data/web2apps
+
+# Set environment variables
+ENV RUST_LOG=info
+ENV METAVERSE_DATA=/data/metaverse
+ENV WEB2_APPS_DATA=/data/web2apps
+
+# Expose ports
+EXPOSE 8545 30303
+
+# Set entrypoint
+ENTRYPOINT ["metaverse"]

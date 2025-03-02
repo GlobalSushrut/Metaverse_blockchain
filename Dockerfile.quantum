@@ -1,0 +1,32 @@
+# Use Qiskit runtime as base
+FROM python:3.9-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install quantum computing packages
+RUN pip install --no-cache-dir \
+    qiskit==0.39.0 \
+    qiskit-aer==0.11.0 \
+    qiskit-ibm-runtime==0.9.0 \
+    cirq==1.0.0 \
+    pennylane==0.28.0 \
+    numpy==1.23.5 \
+    scipy==1.9.3
+
+WORKDIR /usr/src/quantum
+COPY ./quantum_sim .
+
+# Environment variables for quantum simulation
+ENV QUANTUM_SIMULATOR=aer
+ENV QUANTUM_BACKEND=statevector_simulator
+ENV MAX_QUBITS=32
+
+# Expose port for quantum service
+EXPOSE 5000
+
+CMD ["python", "quantum_service.py"]

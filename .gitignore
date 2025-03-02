@@ -1,0 +1,85 @@
+# Rust specific
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Debug logs
+debug/
+*.log
+
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+
+# Docker
+.docker/
+*.env.docker
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Quantum simulation data
+quantum_sim/
+*.qdata
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Private keys and secrets
+*.pem
+*.key
+secrets/
+
+# Documentation build
+docs/_build/
+docs/api/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Blockchain data
+chain_data/
+network_data/
+
+# Virtual environment
+venv/
+.env/
+.venv/
+env/
+
+# Rust specific additional
+debug/
+target/
+
+# Remove binary files
+*.bin
+*.exe
+*.out
+
+# Cache directories
+.cache/
+__pycache__/
+*.py[cod]
+*$py.class

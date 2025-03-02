@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  metaverse-node:
+    build: .
+    ports:
+      - "8545:8545"
+      - "30303:30303"
+    volumes:
+      - metaverse-data:/data/metaverse
+    environment:
+      - RUST_LOG=info
+      - NODE_TYPE=mainnet
+    command: ["run"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "metaverse", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  private-chain:
+    build: .
+    ports:
+      - "8546:8545"
+      - "30304:30303"
+    volumes:
+      - private-chain-data:/data/metaverse
+    environment:
+      - RUST_LOG=info
+      - NODE_TYPE=private
+    command: ["run", "--chain-type", "private"]
+    depends_on:
+      - metaverse-node
+    restart: unless-stopped
+
+  xor-storage:
+    build: .
+    ports:
+      - "8547:8545"
+    volumes:
+      - xor-storage-data:/data/metaverse
+    environment:
+      - RUST_LOG=info
+      - NODE_TYPE=storage
+    command: ["run", "--chain-type", "storage"]
+    depends_on:
+      - metaverse-node
+    restart: unless-stopped
+
+  foa-contracts:
+    build: .
+    ports:
+      - "8548:8545"
+    volumes:
+      - foa-contracts-data:/data/metaverse
+    environment:
+      - RUST_LOG=info
+      - NODE_TYPE=contracts
+    command: ["run", "--chain-type", "contracts"]
+    depends_on:
+      - metaverse-node
+    restart: unless-stopped
+
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - metaverse-node
+    restart: unless-stopped
+
+  # Quantum simulation service
+  quantum-sim:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    ports:
+      - "5000:5000"
+    volumes:
+      - quantum-data:/usr/src/quantum/data
+    environment:
+      - QUANTUM_SIMULATOR=aer
+      - MAX_QUBITS=32
+    depends_on:
+      - metaverse-node
+    restart: unless-stopped
+
+  # Database service
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=metaverse
+      - POSTGRES_PASSWORD=metaverse_secret
+      - POSTGRES_DB=metaverse
+    restart: unless-stopped
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin_secret
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  metaverse-data:
+  private-chain-data:
+  xor-storage-data:
+  foa-contracts-data:
+  quantum-data:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
